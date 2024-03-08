@@ -1,0 +1,184 @@
+﻿
+ 
+@model IEnumerable<FileUploadDownload.Models.FileDetails>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>File List</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        #noFilesMessage {
+            display: none; /* يتم إخفاء الرسالة افتراضياً */
+        }
+
+        #fileListTable {
+            display: block; /* يتم عرض الجدول افتراضياً */
+        }
+
+        .no-files-selected #noFilesMessage {
+            display: block; /* عندما لا يكون هناك ملفات لعرضها، يتم عرض الرسالة */
+        }
+
+        .no-files-selected #fileListTable {
+            display: none; /* عندما لا يكون هناك ملفات لعرضها، يتم إخفاء الجدول */
+        }
+    </style>
+</head>
+<body>
+    <div class="row mt-5">
+        <div class="col">
+            <h2 class="mb-4">Filter Files</h2>
+            <select id="fileTypeFilter" class="form-control">
+                <option value="">All Types</option>
+                <option value="application/pdf">PDF</option>
+                <option value="image/jpeg">JPEG</option>
+                <option value="image/jpg">JPG</option>
+                <option value="image/png">PNG</option>
+                <option value="image/gif">GIF</option>
+
+            </select>
+        </div>
+    </div>
+    <div class="container">
+
+        <p>
+        <div class="row mt-5">
+           
+            <div class="col">
+             
+                    
+                    
+                    <p></p>
+                    
+                      <form method="post" enctype="multipart/form-data">
+                        <h2 class="mb-4">Upload File</h2>
+                            <div class="form-group">
+                                <label for="fileUpload">Select file(s) to upload:</label>
+                                <input type="file" class="form-control-file" id="fileUpload" name="files" multiple>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label for="description">Description:</label>
+                                    <input type="text" class="form-control" id="description" name="description" />
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="createdBy">Created By:</label>
+                                    <input type="text" class="form-control" id="createdBy" name="createdBy" />
+                                </div>
+                            </div>
+
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-cloud-arrow-up"></i> Upload
+                        </button>
+
+                       
+                        </form>
+                
+              
+                @if (ViewBag.ErrorMessage != null)
+                {
+                    <div class="alert alert-danger mt-3">
+                        @ViewBag.ErrorMessage
+                    </div>
+                }
+            </div>
+            </p>
+            <div class="col">
+                <h2 class="mb-4">File List</h2>
+                @if (ViewBag.Message != null)
+                {
+                    <div class="alert alert-success" role="alert">
+                        @ViewBag.Message
+                    </div>
+                }
+           
+                @if (Model.Any())
+                {
+                <table class="table table-striped table-bordered">
+                        <thead class="thead-dark">
+                            <tr>
+                                <th scope="col">Name</th>
+                                <th scope="col">Type</th>
+                                <th scope="col">Description</th>
+                                <th scope="col">Created At</th>
+                                <th scope="col">Created By</th>
+                                <th scope="col">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var file in Model)
+                            {
+                                <tr class="file-item" data-file-type="@file.FileType">
+                                    <td>@file.Name</td>
+                                    <td>@file.FileType</td>
+                                    <td>@file.Description</td>
+                                    <td>@file.CreatedAt</td>
+                                    <td>@file.CreatedBy</td>
+                                    <td>
+                                        <div class="btn-group" role="group" aria-label="Basic example">
+                                            <a href="@Url.Action("Download", new { filename = file.Name })" class="btn btn-primary">
+                                                <i class="bi bi-cloud-download"></i>
+                                            </a>
+                                            <div style="width: 10px;"></div>
+                                            <form method="post" asp-action="Delete" asp-route-id="@file.Id" onsubmit="return confirm('Are you sure you want to delete this file?');">
+                                                <button type="submit" class="btn btn-danger">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <p id="noFilesMessage" class="mt-4">No files found.</p>
+                }
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // هذا السكريبت يقوم بتصفية قائمة الملفات بناءً على نوع الملف المحدد
+
+        // يتم إضافة مستمع لحدث التغيير على قائمة تصفية نوع الملفات
+        document.getElementById('fileTypeFilter').addEventListener('change', function () {
+            // الحصول على قيمة نوع الملف المحدد
+            var selectedFileType = this.value;
+
+            // الحصول على جميع عناصر الملفات في القائمة
+            var files = document.querySelectorAll('.file-item');
+
+            // تكرار كل عنصر ملف
+            files.forEach(function (file) {
+                // تحديد ما إذا كان يجب عرض هذا الملف أم لا استنادًا إلى نوع الملف المحدد
+                if (selectedFileType === '' || file.dataset.fileType === selectedFileType) {
+                    file.style.display = 'table-row'; // عرض العنصر إذا كان من النوع المحدد
+                } else {
+                    file.style.display = 'none'; // إخفاء العنصر إذا لم يكن من النوع المحدد
+                }
+            });
+
+            // التحقق مما إذا كانت هناك ملفات تم عرضها بناءً على النوع المحدد
+            if (selectedFileType === '' || document.querySelectorAll('.file-item[data-file-type="' + selectedFileType + '"]').length > 0) {
+                // إظهار جدول الملفات إذا كان هناك ملفات تم عرضها
+                document.getElementById('fileListTable').style.display = 'block';
+                // إخفاء رسالة "لا توجد ملفات" إذا كانت هناك ملفات تم عرضها
+                document.getElementById('noFilesMessage').style.display = 'none';
+            } else {
+                // إخفاء جدول الملفات إذا لم يتم عرض أي ملفات
+                document.getElementById('fileListTable').style.display = 'none';
+                // إظهار رسالة "لا توجد ملفات" إذا لم يتم عرض أي ملفات
+                document.getElementById('noFilesMessage').style.display = 'block';
+            }
+        });
+
+    </script>
+
+</body>
+</html>
+
